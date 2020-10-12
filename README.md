@@ -6,7 +6,7 @@ With AES the data is encrypted and with RSA publickey the AES is encrypted and s
 The client receives the encrypted data along with encrypted AES key. Since the client has the RSA privatekey, it can decrypt the AES key.
 Thereafter, it uses the AES key to decrypt the data and shows the content to the user.
 
-# Steps
+# Steps to encrypt
 1. Server knows the RSA publickey and push notification token
 2. Server generates an AES key
 ``` kotlin
@@ -14,15 +14,27 @@ val aesKey = cryptoManager.generateAESkey()
 ```
 3. Server encrypts the data with AES key (`CryptoManager.decryptSymmetric`)
 ``` kotlin
-val payloadEncrypted = cryptoManager.encryptSymmetric(payloadStr, aesKey)
+val payloadEncryptedResult = cryptoManager.encryptSymmetric(payloadStr, aesKey)
 ```
 4. Server encrypts the AES key with RSA publickey (`CryptoManager.decryptAsymmetric`)
 ``` kotlin
-val encryptedAesKey = cryptoManager.encryptAsymmetric(encodedAesKeyStr, publicKey)
+val encryptedAesKeyResult = cryptoManager.encryptAsymmetric(encodedAesKeyStr, publicKey)
 ```
 5. Server sends message to device with push notification token
 
 CryptoManager can also be used to decrypt the content in Android
+
+# Steps to decrypt
+1. Once the push notification is received, get the encrypted AES key from the received data
+2. Since the device has the RSA privatekey, it can decrypt the AES key
+```kotlin
+val privateKey = PRIVATE_KEY
+val decryptedAesKeyResult = cryptoManager.decryptAsymmetric(encryptedAesKey, privateKey)
+```
+3. Use the decryptedAesKey to decrypt the message
+```kotlin
+val messageResult = cryptoManager.decryptSymmetric(cipherData, encodedAesKeyStr)
+```
 
 # Data structure
 
