@@ -120,7 +120,7 @@ class CryptoTest {
         val publicKey = PUBLIC_KEY
         val encryptedData = cryptoManager.encryptAsymmetric(data, publicKey)
         when(encryptedData){
-            is CryptoManager.CryptoResult.Error-> assertEquals("Data must not be longer than 245 bytes",encryptedData.e.message)
+            is CryptoManager.CryptoResult.Error-> assertEquals("Data must not be longer than 190 bytes",encryptedData.e.message)
             else -> fail("Unexpected result")
         }
 

@@ -16,7 +16,7 @@ import javax.crypto.spec.SecretKeySpec
 private const val SYM_ALGORITHM = "AES"
 private const val SYM_TRANSFORMATION = "AES/GCM/NoPadding"
 private const val ASYM_ALGORITHM = "RSA"
-private const val ASYM_TRANSFORMATION = "RSA/ECB/PKCS1Padding"
+private const val ASYM_TRANSFORMATION = "RSA/ECB/OAEPWITHSHA-256ANDMGF1PADDING"
 private const val AES_KEY_SIZE = 128
 private const val GCM_NONCE_LENGTH = 12
 
