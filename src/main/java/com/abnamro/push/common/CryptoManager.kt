@@ -1,22 +1,26 @@
-package com.abnamro.push.crypto
+package com.abnamro.push.common
 
-
+import com.abnamro.push.server.notifier.toHexArray
 import java.nio.ByteBuffer
 import java.security.KeyFactory
 import java.security.SecureRandom
+import java.security.spec.MGF1ParameterSpec
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.OAEPParameterSpec
+import javax.crypto.spec.PSource
 import javax.crypto.spec.SecretKeySpec
 
 
 private const val SYM_ALGORITHM = "AES"
 private const val SYM_TRANSFORMATION = "AES/GCM/NoPadding"
 private const val ASYM_ALGORITHM = "RSA"
-private const val ASYM_TRANSFORMATION = "RSA/ECB/OAEPWITHSHA-256ANDMGF1PADDING"
+private const val ASYM_TRANSFORMATION = "RSA/ECB/OAEPWITHSHA-256andMGF1PADDING"
+private const val ANDROID_BUG_OAEPW_SHA = "RSA/ECB/OAEPWITHSHA-256ANDMGF1PADDING" //https://issuetracker.google.com/issues/37075898#comment7
 private const val AES_KEY_SIZE = 128
 private const val GCM_NONCE_LENGTH = 12
 
@@ -46,12 +50,22 @@ interface CryptoManager {
                 val keySpec = PKCS8EncodedKeySpec(privateKey.decodeToBase64())
                 val keyFactory = KeyFactory.getInstance(ASYM_ALGORITHM)
                 val privateKeyObj = keyFactory.generatePrivate(keySpec)
+                val decryptedByte = if(ANDROID_BUG_OAEPW_SHA.equals(ASYM_TRANSFORMATION, true)) {
+                    val sp = OAEPParameterSpec("SHA-256", "MGF1", MGF1ParameterSpec("SHA-1"), PSource.PSpecified.DEFAULT)
+                    val cipher = Cipher.getInstance(ASYM_TRANSFORMATION)
+                    cipher.init(Cipher.DECRYPT_MODE, privateKeyObj, sp)
+                    cipher.doFinal(data)
+                } else {
+                    val cipher = Cipher.getInstance(ASYM_TRANSFORMATION)
+                    cipher.init(Cipher.DECRYPT_MODE, privateKeyObj)
+                    cipher.doFinal(data)
+                }
+                val bytes = decryptedByte.encodeToBase64()
+                logger.debug("RSA decrypting bytes  ${bytes.toHexArray()}")
+                val text = String(bytes, Charsets.UTF_8)
+                logger.debug("RSA decrypting text  ${text}")
 
-                val cipher = Cipher.getInstance(ASYM_TRANSFORMATION)
-                cipher.init(Cipher.DECRYPT_MODE, privateKeyObj)
-                val decryptedByte = cipher.doFinal(data)
-
-                CryptoResult.Data(String(decryptedByte.encodeToBase64(), Charsets.UTF_8))
+                CryptoResult.Data(text)
             } catch (e: java.lang.Exception) { //NOSONAR
                 logger.debug("Failed to decrypt: ", e)
                 CryptoResult.Error(e)
@@ -61,21 +75,21 @@ interface CryptoManager {
         }
 
         fun encryptAsymmetric(dataStr: String, publicKey: String) =  try {
-                val data = dataStr.decodeToBase64()
-                val keySpec = X509EncodedKeySpec(publicKey.decodeToBase64())
-                val keyFactory = KeyFactory.getInstance(ASYM_ALGORITHM)
-                val publicKeyObj = keyFactory.generatePublic(keySpec)
+            val data = dataStr.decodeToBase64()
+            val keySpec = X509EncodedKeySpec(publicKey.decodeToBase64())
+            val keyFactory = KeyFactory.getInstance(ASYM_ALGORITHM)
+            val publicKeyObj = keyFactory.generatePublic(keySpec)
 
-                val cipher = Cipher.getInstance(ASYM_TRANSFORMATION)
-                cipher.init(Cipher.ENCRYPT_MODE, publicKeyObj)
-                val encData = cipher.doFinal(data)
+            val cipher = Cipher.getInstance(ASYM_TRANSFORMATION)
+            cipher.init(Cipher.ENCRYPT_MODE, publicKeyObj)
+            val encData = cipher.doFinal(data)
 
-                logger.debug("aesKey encrypted size ${encData.size}")
-                CryptoResult.Data( String(encData.encodeToBase64(), Charsets.UTF_8))
-            } catch (e: Exception) {//NOSONAR
-                logger.error(message =  "Failed to decrypt: ", e=e)
-                CryptoResult.Error(e)
-            }
+            logger.debug("aesKey encrypted size ${encData.size}")
+            CryptoResult.Data( String(encData.encodeToBase64(), Charsets.UTF_8))
+        } catch (e: Exception) {//NOSONAR
+            logger.error(message =  "Failed to decrypt: ", e=e)
+            CryptoResult.Error(e)
+        }
 
 
 
@@ -87,24 +101,26 @@ interface CryptoManager {
         }
 
         override fun decryptSymmetric(strData: String, privateKey: String)= try {
-                val cipherMessage = strData.decodeToBase64()
-                logger.debug("AES decrypting cipherMessage size ${cipherMessage.size}")
+            val cipherMessage = strData.decodeToBase64()
+            logger.debug("AES decrypting cipherMessage size ${cipherMessage.size}")
+            logger.debug("AES decrypting cipherMessage  ${cipherMessage.toHexArray()}")
 
-                //use first GCM_NONCE_LENGTH bytes for nonce
-                val gcmNonce = GCMParameterSpec(AES_KEY_SIZE, cipherMessage, 0, GCM_NONCE_LENGTH)
-                val cipher = Cipher.getInstance(SYM_TRANSFORMATION)
-                val keySpec = SecretKeySpec(privateKey.decodeToBase64(), SYM_ALGORITHM)
+            //use first GCM_NONCE_LENGTH bytes for nonce
+            val gcmNonce = GCMParameterSpec(AES_KEY_SIZE, cipherMessage, 0, GCM_NONCE_LENGTH)
+            val cipher = Cipher.getInstance(SYM_TRANSFORMATION)
+            val keySpec = SecretKeySpec(privateKey.decodeToBase64(), SYM_ALGORITHM)
+            logger.debug("AES decrypting gcmNonce.iv  ${gcmNonce.iv.toHexArray()}")
 
-                cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmNonce)
+            cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmNonce)
 
-                //use everything from GCM_NONCE_LENGTH bytes on as ciphertext
-                val plainText = cipher.doFinal(cipherMessage, GCM_NONCE_LENGTH, cipherMessage.size - GCM_NONCE_LENGTH)
+            //use everything from GCM_NONCE_LENGTH bytes on as ciphertext
+            val plainText = cipher.doFinal(cipherMessage, GCM_NONCE_LENGTH, cipherMessage.size - GCM_NONCE_LENGTH)
 
-                CryptoResult.Data( String(plainText, Charsets.UTF_8))
-            } catch (e: Exception) { //NOSONAR
-                logger.error(message =  "Failed to decrypt: ", e = e)
-                CryptoResult.Error(e)
-            }
+            CryptoResult.Data( String(plainText, Charsets.UTF_8))
+        } catch (e: Exception) { //NOSONAR
+            logger.error(message =  "Failed to decrypt: ", e = e)
+            CryptoResult.Error(e)
+        }
 
 
 
@@ -112,7 +128,7 @@ interface CryptoManager {
             val data = message.toByteArray()
 
             // Encrypt cipher
-            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            val cipher = Cipher.getInstance(SYM_TRANSFORMATION)
             val parameterSpec = GCMParameterSpec(AES_KEY_SIZE, aesNonce) //128 bit auth tag length
             cipher.init(Cipher.ENCRYPT_MODE, aesKey, parameterSpec)
             val cipherText = cipher.doFinal(data)

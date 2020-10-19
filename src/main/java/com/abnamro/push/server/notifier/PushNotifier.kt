@@ -3,10 +3,10 @@ package com.abnamro.push.server.notifier
 import com.abnamro.push.common.dto.Content
 import com.abnamro.push.common.dto.Data
 import com.abnamro.push.common.dto.EncryptedData
-import com.abnamro.push.crypto.CryptoManager
-import com.abnamro.push.crypto.LogBridge
-import com.abnamro.push.crypto.SecureRandomBridge
-import com.abnamro.push.crypto.encodeToBase64
+import com.abnamro.push.common.CryptoManager
+import com.abnamro.push.common.LogBridge
+import com.abnamro.push.common.SecureRandomBridge
+import com.abnamro.push.common.encodeToBase64
 import com.abnamro.push.server.PushSender
 import com.abnamro.push.server.print
 import com.google.gson.Gson
@@ -109,7 +109,9 @@ interface PushNotifier {
             }
 
             val encode = aesKey.encoded.encodeToBase64()
+            print("AES key bytes: ${encode.toHexArray()}")
             val encodedAesKeyStr =String(encode, Charsets.UTF_8)
+            print("AES key string: $encodedAesKeyStr")
 
             return cryptoManager.encryptAsymmetric(encodedAesKeyStr, publicKey)
         }
