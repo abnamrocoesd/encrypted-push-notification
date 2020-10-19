@@ -1,6 +1,6 @@
 # Push notification
 This example code shows how to encrypt a push notification content and send it to a device.
-It uses RSA and AES encryption algorithm to encrypt the data.
+It uses RSA and AES encryption algorithms to encrypt the data.
 
 With AES the data is encrypted and with RSA publickey the AES is encrypted and send to the devices.
 The client receives the encrypted data along with encrypted AES key. Since the client has the RSA privatekey, it can decrypt the AES key.
