@@ -6,13 +6,8 @@ import java.io.File
 import java.util.*
 
 var pushServerApiKey = ""//From your firebase project
-var pushToken = ""
-var pushPublicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqNe8d4WEYt3Xkt25oTUJluptFTCyQSw1\n" +
-        "    wqPtaGgH3i2DI5fPRprpP9s8dW8W6WBzHVyzoiSxfU24CiBly2kZF+XLAFT20Lo+XIDrDA+3YJ+H\n" +
-        "    quLAP8AmHCol8jK8gp7wAERnyYgmMEtQ+V6c0PvbWWQpRnNdXsqg55oaURspZVQHEyxW1Nl3pjPo\n" +
-        "    NM3rsWWYB6C/88F5mtCFsUpicFD6DSpshEu/hb0Q8CULWQwzSIATTD7QOLiUB5FRwQiS34I7bKPo\n" +
-        "    TRiA7j7lNUsHsULuj+CZIgHBkkufPI0M3CL+b4eQyvgbCKqByE3SJTrhDKUVJcFmUknVCFSgcg0r\n" +
-        "    Iv3QJQIDAQAB"
+var pushToken = "" //device push notification token
+var pushPublicKey = ""//device public key
 
 fun main(vararg args: String) {
     readArgs(args)
