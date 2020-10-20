@@ -34,8 +34,8 @@ fun main(vararg args: String) {
             fallbackTitle = "Fallback title encryption failed",
             fallbackMessage = "Fallback message encryption failed"
     )
-    PushNotifier.Impl(PushSender.FcmSender(pushServerApiKey)).sendFcm(pushToken, pushPublicKey, input)
-    return
+    val isIos = prompt("iOS? (y|n)")
+    PushNotifier.Impl(PushSender.FcmSender(pushServerApiKey)).sendFcm(pushToken, pushPublicKey, input, isIos?.equals("y", true))
 }
 
 fun readArgs(args: Array<out String>) {
