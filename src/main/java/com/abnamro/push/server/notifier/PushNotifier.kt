@@ -6,6 +6,7 @@ import com.abnamro.push.common.dto.EncryptedData
 import com.abnamro.push.common.CryptoManager
 import com.abnamro.push.common.LogBridge
 import com.abnamro.push.common.SecureRandomBridge
+import com.abnamro.push.common.dto.Notification
 import com.abnamro.push.common.encodeToBase64
 import com.abnamro.push.server.PushSender
 import com.abnamro.push.server.print
@@ -17,7 +18,7 @@ import javax.crypto.SecretKey
 interface PushNotifier {
     data class MessageInput(val title: String, val message: String, val fallbackTitle: String, val fallbackMessage: String, val deeplink: String, val type: String)
 
-    fun sendFcm(token: String, publicKey: String, input: MessageInput)
+    fun sendFcm(token: String, publicKey: String, input: MessageInput, isIos: Boolean)
     class Impl(private val pushSender: PushSender): PushNotifier {
         data class Message(val title: String, val message: String, val deeplink: String, val type: String)
 
@@ -68,7 +69,7 @@ interface PushNotifier {
         }
 
 
-        override fun sendFcm(token: String, publicKey: String, input: MessageInput) {
+        override fun sendFcm(token: String, publicKey: String, input: MessageInput, isIos: Boolean) {
 
             print("Token: $token")
             print("publicKey: $publicKey")
@@ -100,7 +101,14 @@ interface PushNotifier {
 
             val data = Data(content)
 
-            pushSender.send(token, data)
+            if(isIos) {
+                print("Sending message for iOS")
+                val notification = Notification(input.fallbackTitle, input.fallbackMessage)
+                pushSender.send(token, notification, data)
+            } else {
+                print("Sending message for Android")
+                pushSender.send(token, null, data)
+            }
         }
 
         private fun encryptAesKey(aesKey: SecretKey?, publicKey: String): CryptoManager.CryptoResult {

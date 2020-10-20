@@ -2,6 +2,7 @@ package com.abnamro.push.server
 
 
 import com.abnamro.push.common.dto.Data
+import com.abnamro.push.common.dto.Notification
 import com.abnamro.push.common.dto.PostRequestData
 import com.abnamro.push.server.notifier.toJsonString
 import com.google.gson.Gson
@@ -10,13 +11,11 @@ import com.squareup.okhttp.*
 import java.io.IOException
 
 interface PushSender {
-    fun send(token: String, data: Data)
+    fun send(token: String, notification: Notification?, data: Data?)
     class FcmSender(private val serverKey: String): PushSender {
 
-        override fun send(token: String, data: Data) {
-            val gson = Gson()
-
-            val postRequestData = PostRequestData(data, token)
+        override fun send(token: String, notification: Notification?, data: Data?) {
+            val postRequestData = PostRequestData(notification, data, token)
             val json = postRequestData.toJsonString()
             val url = "https://fcm.googleapis.com/fcm/send"
             print("Sending message $json")
