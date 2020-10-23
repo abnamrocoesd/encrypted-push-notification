@@ -94,7 +94,7 @@ interface CryptoManager {
 
 
         override fun generateAESkey(): SecretKey? {
-            val keyGen = KeyGenerator.getInstance("AES")
+            val keyGen = KeyGenerator.getInstance(SYM_ALGORITHM)
             keyGen.init(AES_KEY_SIZE, random.getImpl())
             val secretKey = keyGen.generateKey()
             return secretKey

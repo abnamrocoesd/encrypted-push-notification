@@ -6,7 +6,8 @@ import com.google.gson.annotations.SerializedName
 data class PostRequestData (
         @SerializedName("notification") @Expose val notification: Notification?,
         @SerializedName("data") @Expose val data: Data?,
-        @SerializedName("to") @Expose val to: String
+        @SerializedName("to") @Expose val to: String,
+        @SerializedName("mutable-content") val mutableContent: Boolean = true
 )
 data class Data (@SerializedName("encrypted-content") @Expose val content: Content)
 data class Notification (@SerializedName("title") @Expose val title: String, @SerializedName("body") @Expose val body: String)
