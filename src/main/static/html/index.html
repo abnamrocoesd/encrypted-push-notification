@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<title>Local FCM sender</title>
+<body>
+
+<h2>Sending push notification v1</h2>
+
+<form action="/v1/send" method="post" target="_blank">
+    <label for="serveAPI">Server API</label><br>
+    <input type="text" id="serveAPI" name="serveAPI" value=""><br>
+    <label for="pushToken">Push token</label><br>
+    <input type="text" id="pushToken" name="pushToken" value=""><br><br>
+
+    <label for="publicKey">Public key</label><br>
+    <input type="text" id="publicKey" name="publicKey" value=""><br><br>
+
+    <label for="title">Notification title</label><br>
+    <input type="text" id="title" name="title" value=""><br><br>
+
+    <label for="message">Notification message</label><br>
+    <input type="text" id="message" name="message" value=""><br><br>
+
+    <label for="fallbackTitle">Notification fallback Title</label><br>
+    <input type="text" id="fallbackTitle" name="fallbackTitle" value="Fallback title"><br><br>
+
+    <label for="fallbackMessage">Notification fallback message</label><br>
+    <input type="text" id="fallbackMessage" name="fallbackMessage" value="Fallback message"><br><br>
+
+    <label for="deeplink">Deeplink</label><br><input type="text" id="deeplink" name="deeplink" value="grip://open"><br><br>
+
+    <label for="type">Type</label><br>
+    <input type="text" id="type" name="type" value="-"><br><br>
+
+    <label for="isIos">Is iOS</label><br>
+    <input type="checkbox" id="isIos" name="isIos" value="checked"><br><br>
+
+    <input type="submit" value="Submit">
+</form>
+
+
+</body>
+</html>

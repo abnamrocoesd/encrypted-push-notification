@@ -1,3 +1,6 @@
 notification
 /notification/*
 notification.zip
+src/test/res/cbc/output.bmp
+src/test/res/ecb/output.bmp
+src/test/res/gcm/output.bmp

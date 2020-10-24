@@ -1,14 +1,10 @@
 package com.abnamro.push.server.notifier
 
+import com.abnamro.push.common.*
 import com.abnamro.push.common.dto.Content
 import com.abnamro.push.common.dto.Data
 import com.abnamro.push.common.dto.EncryptedData
-import com.abnamro.push.common.CryptoManager
-import com.abnamro.push.common.LogBridge
-import com.abnamro.push.common.SecureRandomBridge
 import com.abnamro.push.common.dto.Notification
-import com.abnamro.push.common.encodeToBase64
-import com.abnamro.push.server.PushSender
 import com.abnamro.push.server.print
 import com.google.gson.Gson
 import java.lang.IllegalArgumentException
@@ -18,7 +14,7 @@ import javax.crypto.SecretKey
 interface PushNotifier {
     data class MessageInput(val title: String, val message: String, val fallbackTitle: String, val fallbackMessage: String, val deeplink: String, val type: String)
 
-    fun sendFcm(token: String, publicKey: String, input: MessageInput, isIos: Boolean)
+    fun sendFcm(token: Token, publicKey: PublicKey, input: MessageInput, isIos: Boolean)
     class Impl(private val pushSender: PushSender): PushNotifier {
         data class Message(val title: String, val message: String, val deeplink: String, val type: String)
 
@@ -69,7 +65,7 @@ interface PushNotifier {
         }
 
 
-        override fun sendFcm(token: String, publicKey: String, input: MessageInput, isIos: Boolean) {
+        override fun sendFcm(token: Token, publicKey: PublicKey, input: MessageInput, isIos: Boolean) {
 
             print("Token: $token")
             print("publicKey: $publicKey")
@@ -78,7 +74,7 @@ interface PushNotifier {
             val aesKey = cryptoManager.generateAESkey()
             val  payload = encryptedMessage(input, aesKey)
 
-            val encryptedEncodedAesKey = encryptAesKey(aesKey, publicKey)
+            val encryptedEncodedAesKey = encryptAesKey(aesKey, publicKey.value)
 
             val content = when(encryptedEncodedAesKey){
                 is CryptoManager.CryptoResult.Error -> Content(

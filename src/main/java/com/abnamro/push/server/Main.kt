@@ -1,64 +1,65 @@
 package com.abnamro.push.server
-
-
-import com.abnamro.push.common.ext.toText
+import com.abnamro.push.common.PublicKey
+import com.abnamro.push.common.ServerApi
+import com.abnamro.push.common.Token
 import com.abnamro.push.server.notifier.PushNotifier
 import com.abnamro.push.server.notifier.PushSender
-import java.io.File
-import java.util.*
+import io.ktor.application.*
+import io.ktor.http.content.*
+import io.ktor.request.*
+import io.ktor.response.*
+import io.ktor.routing.*
+import io.ktor.server.engine.*
+import io.ktor.server.netty.*
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
-var pushServerApiKey = ""//From your firebase project
-var pushToken = "" //device push notification token
-var pushPublicKey = ""//device public key
 
-fun main(vararg args: String) {
-    readArgs(args)
-    if(pushServerApiKey.isEmpty()){
-        print("Please provide a server key, see Main.kt")
-        System.exit(0)
-    }
-    if(pushToken.isEmpty()){
-        print("Please provide a token, see Main.kt")
-        System.exit(0)
-    }
-    if(pushPublicKey.isEmpty()){
-        print("Please provide a public key, see Main.kt")
-        System.exit(0)
-    }
-    print("API key $pushServerApiKey")
-    print("token $pushToken")
-    print("public key $pushPublicKey")
-    val input = PushNotifier.MessageInput(
-            title = prompt("title"),
-            message = prompt("message"),
-            deeplink = prompt("Deeplink"),
-            type = prompt("Type"),
-            fallbackTitle = "Fallback title encryption failed",
-            fallbackMessage = "Fallback message encryption failed"
-    )
-    val isIos = prompt("iOS? (y|n)")
-    PushNotifier.Impl(PushSender.FcmSender(pushServerApiKey)).sendFcm(pushToken, pushPublicKey, input, isIos?.equals("y", true))
+
+val logger: Logger = LoggerFactory.getLogger("mail")
+fun main() {
+    embeddedServer(Netty, port = 8222) {
+        routing {
+            static("/") {
+                files("src/main/static/html")
+                default("src/main/static/html/index.html")
+            }
+            post("/v1/send") {
+                val parameters = call.receiveParameters()
+                val pushServerApiKey = parameters["serveAPI"]?:""
+                val pushToken = parameters["pushToken"]?:""
+                val pushPublicKey = parameters["publicKey"]?:""
+                val title = parameters["title"]?:""
+                val message = parameters["message"]?:""
+                val fallbackTitle = parameters["fallbackTitle"]?:""
+                val fallbackMessage = parameters["fallbackMessage"]?:""
+                val deeplink = parameters["deeplink"]?:""
+                val type = parameters["type"]?:""
+                val isIos = (parameters["isIos"]?:"") == "checked"
+                send(
+                        ServerApi(pushServerApiKey),
+                        Token(pushToken),
+                        PublicKey(pushPublicKey),
+                        PushNotifier.MessageInput(
+                                title = title,
+                                message = message,
+                                deeplink = deeplink,
+                                type = type,
+                                fallbackTitle = fallbackTitle,
+                                fallbackMessage = fallbackMessage
+                        ), isIos
+                )
+                call.respondText("It is sent 🤷. Check logs")
+            }
+        }
+    }.start(wait = true)
 }
 
-fun readArgs(args: Array<out String>) {
-    if(args.size == 3) {
-        pushServerApiKey = File(args[0]).toText()
-        pushToken = File(args[1]).toText()
-        pushPublicKey = File(args[2]).toText()
-    }
+private fun send(pushServerApiKey: ServerApi, pushToken: Token, pushPublicKey: PublicKey, input: PushNotifier.MessageInput, isIos: Boolean){
+    PushNotifier.Impl(PushSender.FcmSender(pushServerApiKey)).sendFcm(pushToken, pushPublicKey, input, isIos)
 }
 
-private val scanner = Scanner(System.`in`)
 fun print(o: Any) {
-    println("" + o)
-}
-
-fun prompt(title: String): String {
-    print("$title>")
-    val t = scanner.nextLine()
-    println()
-
-    return t
-
+    println("$o")
 }
