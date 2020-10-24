@@ -61,10 +61,4 @@ You can use your own data set. In this example we use the following data
 ```
 
 # How to run locally
-In Main.kt provide:
-```kotlin
-const val PUSH_SERVER_KEY = ""//From your firebase project
-const val PUSH_TOKEN = "" //From device
-const val PUSH_PUBLIC_KEY = "" //From device
-```
-Run the main method, you will be prompt to enter the data you want to send as push notification
+Run the main method, it will start a Ktor server http://localhost:8222
