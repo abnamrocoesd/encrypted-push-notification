@@ -13,19 +13,26 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.io.File
 
 
-
-
-val logger: Logger = LoggerFactory.getLogger("mail")
+val logger: Logger = LoggerFactory.getLogger("push")
 fun main() {
     embeddedServer(Netty, port = 8222) {
         routing {
-            static("/") {
+            static("") {
+                print("Got request")
                 files("src/main/static/html")
                 default("src/main/static/html/index.html")
             }
+            get("/start") {
+                print("Got request")
+                call.respondFile(File("src/main/static/html", "index.html"))
+
+                //default("src/main/static/html/index.html")
+            }
             post("/v1/send") {
+                print("Got post")
                 val parameters = call.receiveParameters()
                 val pushServerApiKey = parameters["serveAPI"]?:""
                 val pushToken = parameters["pushToken"]?:""
