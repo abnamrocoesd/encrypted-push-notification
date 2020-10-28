@@ -45,7 +45,8 @@ interface CryptoManager {
         override fun decryptAsymmetric(strData: String, privateKey: String): CryptoResult {
             val res = try {
                 val data: ByteArray = strData.decodeToBase64()
-                logger.debug(message = "data size: ${data.size}")
+                logger.debug(message = "AsymmDecrypt data size ${data.size}")
+                logger.debug(message = "AsymmDecrypt data ${data.toHexArray()}")
 
                 val keySpec = PKCS8EncodedKeySpec(privateKey.decodeToBase64())
                 val keyFactory = KeyFactory.getInstance(ASYM_ALGORITHM)
@@ -82,10 +83,11 @@ interface CryptoManager {
 
             val cipher = Cipher.getInstance(ASYM_TRANSFORMATION)
             cipher.init(Cipher.ENCRYPT_MODE, publicKeyObj)
-            val encData = cipher.doFinal(data)
+            val cipherData = cipher.doFinal(data)
 
-            logger.debug("aesKey encrypted size ${encData.size}")
-            CryptoResult.Data( String(encData.encodeToBase64(), Charsets.UTF_8))
+            logger.debug(message = "AsymmEncrypt cipherData size ${cipherData.size}")
+            logger.debug(message = "AsymmEnrypt cipherData ${cipherData.toHexArray()}")
+            CryptoResult.Data( String(cipherData.encodeToBase64(), Charsets.UTF_8))
         } catch (e: Exception) {//NOSONAR
             logger.error(message =  "Failed to decrypt: ", e=e)
             CryptoResult.Error(e)
