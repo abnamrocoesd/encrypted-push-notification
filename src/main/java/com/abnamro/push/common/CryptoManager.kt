@@ -19,6 +19,7 @@ import javax.crypto.spec.SecretKeySpec
 private const val SYM_ALGORITHM = "AES"
 private const val SYM_TRANSFORMATION = "AES/GCM/NoPadding"
 private const val ASYM_ALGORITHM = "RSA"
+//private const val ASYM_TRANSFORMATION = "RSA/ECB/NoPadding"
 private const val ASYM_TRANSFORMATION = "RSA/ECB/OAEPWITHSHA-256andMGF1PADDING"
 private const val ANDROID_BUG_OAEPW_SHA = "RSA/ECB/OAEPWITHSHA-256ANDMGF1PADDING" //https://issuetracker.google.com/issues/37075898#comment7
 private const val AES_KEY_SIZE = 128
@@ -143,7 +144,8 @@ interface CryptoManager {
             byteBuffer.put(aesNonce)
             byteBuffer.put(cipherText)
             val cipherData = byteBuffer.array()
-            logger.debug("AES cipherData size ${cipherData.size}")
+            logger.debug("Nonce data ${aesNonce.toHexArray()}")
+            logger.debug("AES cipherData ${cipherData.toHexArray()}")
 
             val cipherMessage = String(cipherData.encodeToBase64(), Charsets.UTF_8)
             logger.debug("AES cipherMessage $cipherMessage")

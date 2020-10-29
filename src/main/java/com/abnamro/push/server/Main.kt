@@ -60,7 +60,7 @@ fun main() {
                 call.respondText("It is sent 🤷. Check logs")
             }
             post("/asymmetric/encrypt") {
-                print("Got post")
+                print("Got post asymmetric")
                 val parameters = call.receiveParameters()
                 val input = parameters["encInput"]?:""
                 val publicKey = parameters["encPublicKey"]?:""
@@ -69,7 +69,7 @@ fun main() {
             }
 
             post("/asymmetric/decrypt") {
-                print("Got post")
+                print("Got post asymmetric")
                 val parameters = call.receiveParameters()
                 val input = parameters["deInput"]?:""
                 val privateKey = parameters["dePrivateKey"]?:""
@@ -77,8 +77,45 @@ fun main() {
                 call.respondText("text: $cipherText")
             }
 
+            post("/symmetric/decrypt") {
+                print("Got post decrypt symmetric")
+                val parameters = call.receiveParameters()
+                val input = parameters["symDecInput"]?:""
+                val secretKey = parameters["symDecSecretKey"]?:""
+                val cipherText = decryptSymmetric(secretKey, input)
+                call.respondText("text: $cipherText")
+            }
+
+            post("/symmetric/encrypt") {
+                print("Got post to encrypt symmetric")
+                val parameters = call.receiveParameters()
+                val input = parameters["symEnInput"]?:""
+                val (cipherText, key) = encryptSymmetric(input)
+                call.respondText("key: $key cipherText: $cipherText")
+            }
+
         }
     }.start(wait = true)
+}
+
+fun decryptSymmetric(secretKey: String, input: String): String {
+    val result = cryptoManager.decryptSymmetric(input, secretKey)
+    return when(result){
+        is CryptoManager.CryptoResult.Error -> "Couldn't decrypt"
+        is CryptoManager.CryptoResult.Data -> result.data
+    }
+}
+
+fun encryptSymmetric(input: String): Pair<String, String> {
+    val secretKey = cryptoManager.generateAESkey()
+    val encodeKey = secretKey?.encoded?.encodeToBase64()?.let {
+        String(it, Charsets.UTF_8)
+    } ?: return Pair("Couldn't encrypt", "key is null")
+    val result = cryptoManager.encryptSymmetric(input, secretKey)
+    return when(result){
+        is CryptoManager.CryptoResult.Error -> Pair("Couldn't encrypt", encodeKey)
+        is CryptoManager.CryptoResult.Data -> Pair(result.data, encodeKey)
+    }
 }
 
 private fun send(pushServerApiKey: ServerApi, pushToken: Token, pushPublicKey: PublicKey, input: PushNotifier.MessageInput, isIos: Boolean){
