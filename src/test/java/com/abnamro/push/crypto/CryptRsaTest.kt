@@ -1,12 +1,11 @@
 package com.abnamro.push.crypto
 
-import com.abnamro.push.common.CryptoManager
-import com.abnamro.push.common.LogBridge
-import com.abnamro.push.common.SecureRandomBridge
-import com.abnamro.push.common.encodeToBase64
+import com.abnamro.push.common.*
+import com.abnamro.push.server.notifier.toHexArray
 import org.junit.Test
 import java.security.SecureRandom
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.fail
 
 private const val PRIVATE_KEY = "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCo17x3hYRi3deS3bmhNQmW6m0V\n" +
@@ -79,6 +78,33 @@ class CryptRsaTest{
         }
     }
 
+    @Test
+    fun `soc test`(){
+        val publicKey = PUBLIC_KEY
+        val privateKey = PRIVATE_KEY
+
+        println("PublicKey: $publicKey")
+        println("PrivateKey: $privateKey")
+        val data = "test"
+
+        //Encrypt with public key
+        val cipher = cryptoManager.encryptAsymmetric(data, publicKey)
+
+        when(cipher){
+            is CryptoManager.CryptoResult.Error -> fail("Unexpected")
+            is CryptoManager.CryptoResult.Data -> {
+                println("Encrypted data ${cipher.data}")
+                println("Encrypted data ${cipher.data.decodeToBase64().toHexArray()}")
+                val result = cryptoManager.decryptAsymmetric(cipher.data, privateKey)
+                assertNotNull(result)
+                when(result){
+                    is CryptoManager.CryptoResult.Data -> assertEquals("test", result.data)
+                    else -> fail("Unexpected result")
+                }
+
+            }
+        }.let {  }
+    }
     @Test
     fun `test rsa large data`() {
         val byteData = "Asymmetric Encryption uses two distinct, yet related keys. One key, the Public Key, is used for encryption and the other, the Private Key, is for decryption. As implied in the name, the Private Key is intended to be private so that only the authenticated recipient can decrypt the message.".toByteArray()

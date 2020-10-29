@@ -1,7 +1,5 @@
 package com.abnamro.push.server
-import com.abnamro.push.common.PublicKey
-import com.abnamro.push.common.ServerApi
-import com.abnamro.push.common.Token
+import com.abnamro.push.common.*
 import com.abnamro.push.server.notifier.PushNotifier
 import com.abnamro.push.server.notifier.PushSender
 import io.ktor.application.*
@@ -14,6 +12,8 @@ import io.ktor.server.netty.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.security.PrivateKey
+import java.security.SecureRandom
 
 
 val logger: Logger = LoggerFactory.getLogger("push")
@@ -59,6 +59,24 @@ fun main() {
                 )
                 call.respondText("It is sent 🤷. Check logs")
             }
+            post("/asymmetric/encrypt") {
+                print("Got post")
+                val parameters = call.receiveParameters()
+                val input = parameters["encInput"]?:""
+                val publicKey = parameters["encPublicKey"]?:""
+                val cipherText = encryptAsymmetric(PublicKey(publicKey), input)
+                call.respondText("cipher: $cipherText")
+            }
+
+            post("/asymmetric/decrypt") {
+                print("Got post")
+                val parameters = call.receiveParameters()
+                val input = parameters["deInput"]?:""
+                val privateKey = parameters["dePrivateKey"]?:""
+                val cipherText = decryptAsymmetric(privateKey, input)
+                call.respondText("text: $cipherText")
+            }
+
         }
     }.start(wait = true)
 }
@@ -67,6 +85,45 @@ private fun send(pushServerApiKey: ServerApi, pushToken: Token, pushPublicKey: P
     PushNotifier.Impl(PushSender.FcmSender(pushServerApiKey)).sendFcm(pushToken, pushPublicKey, input, isIos)
 }
 
+private fun decryptAsymmetric(privateKey: String, input: String): String?{
+    val result = cryptoManager.decryptAsymmetric(input, privateKey)
+    return when(result){
+        is CryptoManager.CryptoResult.Error -> "Couldn't decrypt"
+        is CryptoManager.CryptoResult.Data -> result.data
+    }
+}
+
+private fun encryptAsymmetric(publicKey: PublicKey, input: String): String?{
+    val result = cryptoManager.encryptAsymmetric(input, publicKey.value)
+    return when(result){
+        is CryptoManager.CryptoResult.Error -> "Couldn't encrypt"
+        is CryptoManager.CryptoResult.Data -> result.data
+    }
+}
+
 fun print(o: Any) {
     println("$o")
 }
+
+private val cryptoManager = CryptoManager.Impl(
+        object : LogBridge {
+            override fun debug(message: String?, e: Throwable?) {
+                println("$message")
+                e?.printStackTrace()
+            }
+
+            override fun error(message: String?, e: Throwable?) {
+                debug(message, e)
+            }
+
+        },
+        object : SecureRandomBridge {
+            private val random = SecureRandom.getInstanceStrong()
+            override fun nextBytes(b: ByteArray) {
+                random.nextBytes(b)
+            }
+
+            override fun getImpl() = random
+
+        }
+)
