@@ -18,12 +18,14 @@ import javax.crypto.spec.SecretKeySpec
 
 private const val SYM_ALGORITHM = "AES"
 private const val SYM_TRANSFORMATION = "AES/GCM/NoPadding"
+private const val AES_KEY_SIZE = 128
+private const val GCM_NONCE_LENGTH = 12
+
 private const val ASYM_ALGORITHM = "RSA"
 //private const val ASYM_TRANSFORMATION = "RSA/ECB/NoPadding"
 private const val ASYM_TRANSFORMATION = "RSA/ECB/OAEPWITHSHA-256andMGF1PADDING"
 private const val ANDROID_BUG_OAEPW_SHA = "RSA/ECB/OAEPWITHSHA-256ANDMGF1PADDING" //https://issuetracker.google.com/issues/37075898#comment7
-private const val AES_KEY_SIZE = 128
-private const val GCM_NONCE_LENGTH = 12
+
 
 interface CryptoManager {
     fun decryptSymmetric(strData: String, privateKey: String): CryptoResult
