@@ -77,34 +77,7 @@ class CryptRsaTest{
             else -> fail("Unexpected result")
         }
     }
-
-    @Test
-    fun `soc test`(){
-        val publicKey = PUBLIC_KEY
-        val privateKey = PRIVATE_KEY
-
-        println("PublicKey: $publicKey")
-        println("PrivateKey: $privateKey")
-        val data = "test"
-
-        //Encrypt with public key
-        val cipher = cryptoManager.encryptAsymmetric(data, publicKey)
-
-        when(cipher){
-            is CryptoManager.CryptoResult.Error -> fail("Unexpected")
-            is CryptoManager.CryptoResult.Data -> {
-                println("Encrypted data ${cipher.data}")
-                println("Encrypted data ${cipher.data.decodeToBase64().toHexArray()}")
-                val result = cryptoManager.decryptAsymmetric(cipher.data, privateKey)
-                assertNotNull(result)
-                when(result){
-                    is CryptoManager.CryptoResult.Data -> assertEquals("test", result.data)
-                    else -> fail("Unexpected result")
-                }
-
-            }
-        }.let {  }
-    }
+    
     @Test
     fun `test rsa large data`() {
         val byteData = "Asymmetric Encryption uses two distinct, yet related keys. One key, the Public Key, is used for encryption and the other, the Private Key, is for decryption. As implied in the name, the Private Key is intended to be private so that only the authenticated recipient can decrypt the message.".toByteArray()
@@ -112,7 +85,7 @@ class CryptRsaTest{
         val publicKey = PUBLIC_KEY
         val encryptedData = cryptoManager.encryptAsymmetric(data, publicKey)
         when(encryptedData){
-            is CryptoManager.CryptoResult.Error-> assertEquals("Data must not be longer than 190 bytes",encryptedData.e.message)
+            is CryptoManager.CryptoResult.Error-> assertEquals(true, encryptedData.e.message?.startsWith("Data must not be longer "))
             else -> fail("Unexpected result")
         }
 
