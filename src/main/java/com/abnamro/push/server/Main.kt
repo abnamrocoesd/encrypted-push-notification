@@ -1,5 +1,8 @@
 package com.abnamro.push.server
 import com.abnamro.push.common.*
+import com.abnamro.push.common.dto.Content
+import com.abnamro.push.common.dto.Data
+import com.abnamro.push.common.dto.Notification
 import com.abnamro.push.server.notifier.PushNotifier
 import com.abnamro.push.server.notifier.PushSender
 import io.ktor.application.*
@@ -59,6 +62,27 @@ fun main() {
                 )
                 call.respondText("It is sent 🤷. Check logs")
             }
+            post("/v1/send-standalone") {
+                print("Got post")
+                val parameters = call.receiveParameters()
+                val pushServerApiKey = parameters["serveAPI"]?:""
+                val pushToken = parameters["pushToken"]?:""
+                val fallbackTitle = parameters["fallbackTitle"]?:""
+                val fallbackMessage = parameters["fallbackMessage"]?:""
+                val payload = parameters["payload"]?:""
+                val type = parameters["type"]?:""
+                val isIos = (parameters["isIos"]?:"") == "checked"
+                sendPush(
+                        serverKey = ServerApi(pushServerApiKey),
+                        token = Token(pushToken),
+                        fallbackTitle = fallbackTitle,
+                        fallbackMessage = fallbackMessage,
+                        type = type,
+                        payload = payload,
+                        isIos = isIos
+                )
+                call.respondText("It is sent 🤷. Check logs")
+            }
             post("/asymmetric/encrypt") {
                 print("Got post asymmetric")
                 val parameters = call.receiveParameters()
@@ -90,7 +114,8 @@ fun main() {
                 print("Got post to encrypt symmetric")
                 val parameters = call.receiveParameters()
                 val input = parameters["symEnInput"]?:""
-                val (cipherText, key) = encryptSymmetric(input)
+                val secret = parameters["symEnKey"]?:""
+                val (cipherText, key) = encryptSymmetric(secret, input)
                 call.respondText("key: $key cipherText: $cipherText")
             }
 
@@ -106,15 +131,21 @@ fun decryptSymmetric(secretKey: String, input: String): String {
     }
 }
 
-fun encryptSymmetric(input: String): Pair<String, String> {
-    val secretKey = cryptoManager.generateAESkey()
-    val encodeKey = secretKey?.encoded?.encodeToBase64()?.let {
-        String(it, Charsets.UTF_8)
-    } ?: return Pair("Couldn't encrypt", "key is null")
+fun encryptSymmetric(secretKeyStr: String, input: String): Pair<String, String> {
+    val secretKey = if(secretKeyStr.isNotEmpty()){
+        secretKeyStr
+    } else {
+        val secretKey = cryptoManager.generateAESkey()
+        val encodeKey = secretKey?.encoded?.encodeToBase64()?.let {
+            String(it, Charsets.UTF_8)
+        } ?: return Pair("Couldn't encrypt", "key is null")
+        encodeKey
+    }
+
     val result = cryptoManager.encryptSymmetric(input, secretKey)
     return when(result){
-        is CryptoManager.CryptoResult.Error -> Pair("Couldn't encrypt", encodeKey)
-        is CryptoManager.CryptoResult.Data -> Pair(result.data, encodeKey)
+        is CryptoManager.CryptoResult.Error -> Pair("Couldn't encrypt", secretKey)
+        is CryptoManager.CryptoResult.Data -> Pair(result.data, secretKey)
     }
 }
 
@@ -164,3 +195,13 @@ private val cryptoManager = CryptoManager.Impl(
 
         }
 )
+
+private fun sendPush(serverKey: ServerApi, token: Token, fallbackTitle: String, fallbackMessage: String, type: String, payload: String, isIos: Boolean){
+    val notification = if(isIos){
+        Notification(fallbackTitle, fallbackMessage)
+    } else {
+        null
+    }
+    val data = Data(Content("v2", fallbackTitle, fallbackMessage, type, "", payload))
+    PushSender.FcmSender(serverKey).send(token, notification, data)
+}

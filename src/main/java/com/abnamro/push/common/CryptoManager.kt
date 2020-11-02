@@ -22,9 +22,9 @@ private const val AES_KEY_SIZE = 128
 private const val GCM_NONCE_LENGTH = 12
 
 private const val ASYM_ALGORITHM = "RSA"
-//private const val ASYM_TRANSFORMATION = "RSA/ECB/NoPadding"
-private const val ASYM_TRANSFORMATION = "RSA/ECB/OAEPWITHSHA-256andMGF1PADDING"
-private const val ANDROID_BUG_OAEPW_SHA = "RSA/ECB/OAEPWITHSHA-256ANDMGF1PADDING" //https://issuetracker.google.com/issues/37075898#comment7
+//private const val ASYM_TRANSFORMATION = "RSA/ECB/PKCS1Padding"
+private const val ASYM_TRANSFORMATION = "RSA/ECB/OAEPWithSHA-1AndMGF1Padding"
+private const val ANDROID_BUG_OAEPW_SHA = "RSA/ECB/OAEPWithSHA-1AndMGF1Padding" //https://issuetracker.google.com/issues/37075898#comment7
 
 
 interface CryptoManager {
@@ -55,7 +55,7 @@ interface CryptoManager {
                 val keyFactory = KeyFactory.getInstance(ASYM_ALGORITHM)
                 val privateKeyObj = keyFactory.generatePrivate(keySpec)
                 val decryptedByte = if(ANDROID_BUG_OAEPW_SHA.equals(ASYM_TRANSFORMATION, true)) {
-                    val sp = OAEPParameterSpec("SHA-256", "MGF1", MGF1ParameterSpec("SHA-1"), PSource.PSpecified.DEFAULT)
+                    val sp = OAEPParameterSpec("SHA-1", "MGF1", MGF1ParameterSpec("SHA-1"), PSource.PSpecified.DEFAULT)
                     val cipher = Cipher.getInstance(ASYM_TRANSFORMATION)
                     cipher.init(Cipher.DECRYPT_MODE, privateKeyObj, sp)
                     cipher.doFinal(data)
@@ -128,6 +128,10 @@ interface CryptoManager {
         }
 
 
+        fun encryptSymmetric(message: String, privateKey: String): CryptoResult {
+            val keySpec = SecretKeySpec(privateKey.decodeToBase64(), SYM_ALGORITHM)
+            return encryptSymmetric(message, keySpec)
+        }
 
         fun encryptSymmetric(message: String, aesKey: SecretKey): CryptoResult {
             val data = message.toByteArray()
